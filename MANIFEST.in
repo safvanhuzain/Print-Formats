@@ -1,0 +1,18 @@
+include MANIFEST.in
+include requirements.txt
+include *.json
+include *.md
+include *.py
+include *.txt
+recursive-include solo_learn *.css
+recursive-include solo_learn *.csv
+recursive-include solo_learn *.html
+recursive-include solo_learn *.ico
+recursive-include solo_learn *.js
+recursive-include solo_learn *.json
+recursive-include solo_learn *.md
+recursive-include solo_learn *.png
+recursive-include solo_learn *.py
+recursive-include solo_learn *.svg
+recursive-include solo_learn *.txt
+recursive-exclude solo_learn *.pyc
