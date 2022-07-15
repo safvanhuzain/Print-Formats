@@ -1,0 +1,208 @@
+{% set sgst = {} %}
+{% set cgst = {} %}
+{% for tax in doc.taxes %}
+    {% if "sgst" in tax.account_head.lower() %}
+        {% if sgst.update(json.loads(tax.item_wise_tax_detail)) %}{% endif %}
+    {% elif "cgst" in tax.account_head.lower()  %}
+        {% if cgst.update(json.loads(tax.item_wise_tax_detail)) %}{% endif %}
+    {% endif %}
+{% endfor %}
+
+{% set vars = {'total_net_amount': 0} %}
+{% for item in doc.items %}
+  {% if vars.update({'total_net_amount': vars.total_net_amount + item.net_amount }) %}{% endif %}
+{% endfor %}
+
+{%- macro add_header(page_num, max_pages, doc, letter_head, no_letterhead, footer, print_settings=None) -%}
+	{% if letter_head and not no_letterhead %}
+		<div class="letter-head" style="padding-top: 20px;">{{ letter_head }}</div>
+	{% endif %}
+
+{%- endmacro -%}
+
+{% for page in layout %}
+<div class="page-break">
+	<div {% if print_settings.repeat_header_footer %} id="header-html" class="hidden-pdf" {% endif %}>
+		{{ add_header(loop.index, layout|len, doc, letter_head, no_letterhead, footer, print_settings) }}
+	</div>
+
+	{% if print_settings.repeat_header_footer %}
+	<div id="footer-html" class="visible-pdf">
+		{% if not no_letterhead and footer %}
+		<div class="letter-head-footer">
+			{{ footer }}
+		</div>
+		{% endif %}
+		<p class="text-center small page-number visible-pdf">
+			{{ _("Page {0} of {1}").format('<span class="page"></span>', '<span class="topage"></span>') }}
+		</p>
+	</div>
+	{% endif %}
+	<div class="container-fluid" style="width:100%">
+	    <table class="table nonspace">
+	        <tr>
+	            <td style="border-right:white !important;"><b>Email:giengineeringsolutions@gmail.com<br>
+	            Web&nbsp;&nbsp;: www.fertechproducts.com</b></td>
+	            <td class="text-center"><b>{% if doc.naming_series == '22-23-GIB.####' %} TAX INVOICE B2B {% else %} TAX INVOICE B2C {% endif  %}</b></td>
+	            <td colspan="2" class="text-right"><b>Phone: 7814300300 <br>
+	            Mobile: 04942960400</b> </td>
+	        </tr>
+            <tr>
+                <td style="border:white !important;">
+                    <b>Invoice No </b>:&emsp;{{ doc.name }}<br>
+                    <b>Invoice Date</b>:&emsp;{{ frappe.format(doc.posting_date, {'fieldtype': 'Date'}) }}<br>
+                    <b>Delivery Date:</b>&emsp;{{ frappe.format(doc.delivery_date, {'fieldtype': 'Date'}) }}<br>
+                </td>
+                
+                <td  style="border-right:white !important;"><b><u>Transportation Mode</u></b><br>
+                    Vehicle Number &nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp<br>
+                   <nobr>Place OF Supply &nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp</nobr>
+                </td>
+                <td ><br>
+                   :{{ doc.vehicle_number or ""}}<br>
+                   :{{ doc.place_of_supply or ""}}
+                </td>
+            </tr>
+        </table>
+                <table class="table">
+                    <tr style="font-size:10px">
+                        <td><b>Details of Receiver (About Vendor):</b></td>
+                        <td><b>Details of Consignee(Ship To):</b></td>
+                    </tr>
+                    <tr style="font-size:11px">
+                        <td>
+                        {{ doc.customer_name or ""}}
+                         {% if doc.contact_person  %}<br>
+                        {{ doc.contact_person or ""}}
+                        {% endif %}<br>
+                        {% if doc.address_display  %}
+                        {{ doc.address_display or ""}}<br>{% endif %}
+                        {% if doc.company == 'GI Engineering Solutions' %}
+                        <b>Mobile No:</b>{{ doc.sales_person_no or ""}}
+                        {% endif %}
+                        <!--State:{{frappe.db.get_value('Address', doc.supplier_address,'state') or ""}},-->
+                        <!--Mobile:{{ doc.sales_person_no or "" }}-->
+                        </td> 
+                        <td>{% if doc.shipping_address %}
+                        {{ doc.shipping_address or ""}}
+                        {% else %}
+                        {{ doc.customer_name or ""}}<br>
+                        {{ doc.address_display or ""}}
+                        {% endif %}
+                        </td>
+                    </tr>
+                </table>
+                <table class="table nospace" style="font-size:10px;table-layout:fixed;">
+                    <colgroup>
+                        <col style="width:3%">
+                        <col>
+                        <col style="width:7%">
+                        <col style="width:4%">
+                        <col style="width:5%">
+                        <col style="width:8%">
+                        <!--<col style="width:8%">-->
+                        <col style="width:8%">
+                        <col style="width:4%">
+                        <col style="width:8%">
+                        <col style="width:4%">
+                        <col style="width:8%">
+                        <col style="width:9%">
+                    </colgroup>
+                    <tr>
+                        <th rowspan="2">Sr</th>
+                        <th class="text-center" rowspan="2" >Description</th>
+                        <th rowspan="2">HSN Code</th>
+                        <th class="text-center" rowspan="2">Qty</th>
+                        <th rowspan="2">UOM</th>
+                        <th class="text-right" rowspan="2">Rate</th>
+                        <!--<th rowspan="2">Total</th>-->
+                        <!--<th rowspan="2" style="width:8%">Discount</th>-->
+                        <th rowspan="2">Taxable<br> Value</th>
+                        <th class="text-center" colspan="2">CGST</th>
+                        <th class="text-center" colspan="2">SGST</th>
+                        <th class="text-right" rowspan="2">Total</th>
+                    </tr>
+                    <tr>
+                        <th>%</th>
+                        <th class="text-right">Amt</th>
+                        <th>%</th>
+                        <th class="text-right">Amt</th>
+                    </tr>
+                    {% for row in doc.items %}
+                    <tr class="nospace">
+                        <td>{{ row.idx }}</td>
+                        <td>{{ row.description }}</td>
+                        <td>{{ row.gst_hsn_code or "" }}</td>
+                        <td class="text-center">{{ row.qty|int }}</td>
+                        <td>{{ row.uom }}</td>
+                        <td class="text-right">{{ row.rate or ""}}</td>
+                        <td class="text-right">{{ '%0.2f'| format(row.net_amount|float)}}</td>
+                        <!--<td class="text-right">{{ '%0.2f'| format(row.rate * row.qty|float)}}</td>-->
+                        <!--<td class="text-right">{{ row.discount_amount }}</td>-->
+                        <td>{% if row.item_code in cgst %} {{ (cgst[row.item_code][0]|int ) or ""}} {% endif %}</td>
+                        <td class="text-right">{% if row.item_code in cgst %} {{ '%0.2f'| format(cgst[row.item_code][1]|float) or ""}} {% endif %}</td>
+                        <td>{% if row.item_code in sgst %}{{ (sgst[row.item_code][0]|int) or ""}} {% endif %}</td>
+                        <td class="text-right">{% if row.item_code in sgst %} {{ '%0.2f'| format(sgst[row.item_code][1]|float) or ""}}{% endif %}</td>
+                        <td class="text-right">{{ '%0.2f'| format(row.net_amount + cgst[row.item_code][1] + sgst[row.item_code][1]|float) }}</td>
+                        <!--<td class="text-right">{{ '%0.2f'| format((row.amount|float)) }}</td>-->
+                    </tr>
+                                    {% endfor %}
+                    <tr>
+                        <td colspan="3"><b>E&OE</b></td>
+                        <td class="text-center" colspan="1">{{ doc.total_qty|int }}</td>
+                        <!--<td class="text-right" colspan="3">Total Discount</td>-->
+                        <!--<td class="text-right" colspan="1">{{ "%.2f"|format(doc.discount_amount|abs) }}</td>-->
+                        <td class="text-right" colspan="3">{{ '%0.2f'| format(doc.net_total|float)}}</td>
+                        <td class="text-right" colspan="2">{{ '%0.2f'| format(doc.total_taxes_and_charges/2|float)}}</td>
+                        <td class="text-right" colspan="2">{{ '%0.2f'| format(doc.total_taxes_and_charges/2|float)}}</td>
+                        <td class="text-right">{{ "{:,.2f}".format(doc.grand_total|float) }}</td>
+  
+                    </tr>
+                    <tr>
+                        <td colspan="7">{{ doc.in_words }}</td>
+                        <td class="text-right" colspan="4">Round Off</td>
+                        <td class="text-right"><b>{{ "{:,.2f}".format(doc.rounded_total - doc.grand_total|float) }}</b></td>
+                    </tr>
+                    
+                    <tr>
+                        <td colspan="7"><b>Invoice Value (In Words) </b></td>
+                        <td class="text-right" colspan="4"><b>Grand Total</b></td>
+                        <td class="text-right"><b>{{ "{:,.2f}".format(doc.base_rounded_total|float) }}</b></td>
+                    </tr>
+                    
+                    <tr>
+                        <td colspan="12"><b>Declaration:</b>Certified that the Particulars given above are true and correct</td>
+                    </tr>
+                    <!--<tr>-->
+                    <!--    <td colspan="7">YOUR TERM & CONDITION OF SALE</td>-->
+                    <!--    <td colspan="6">{{ doc.company or "" }}</td>-->
+                    <!--</tr>-->
+                    <!--<tr>-->
+                    <!--    <td colspan="7" rowspan="3">{{ doc.terms or "" }}</td>-->
+                    <!--    <td colspan="6" >Signatory</td>-->
+                    <!--</tr>-->
+                    <!--<tr>-->
+                    <!--    <td colspan="6">Authorised Signatory<br>-->
+                        <!--<img src="{{ frappe.db.get_value('Employee', {'user_id': doc.owner}, 'signature') or '' }}" width="10%"></td>-->
+                    <!--</tr>-->
+                    <!--<tr>-->
+                    <!--    <td colspan="6" >Name:<br>-->
+                    <!--    Designation:</td>-->
+                    <!--</tr>-->
+                    <tr>
+                        <td colspan="3" style="border:white !important;"><b>BANK DETAILS:</b><br>
+                        Bank Name : AXIS BANK<br>
+                        IFSC:UTIB0004026<br>
+                        A/C No : 921030038226181<br>
+                        Branch : VALANCHERY</td>
+                        <td colspan="4"><img src="/files/page-2.jpg" width="100%"></td>
+                        <td colspan="5" class="text-center">{{ doc.company or "" }}<br>
+                        Authorised signatory<br>
+                         <img src="{{ frappe.db.get_value('Employee', {'user_id': doc.owner}, 'signature') or '' }}" width="10%">
+                        
+                        </td>
+                    </tr>
+                </table>
+
+    </div>
+    {% endfor %}

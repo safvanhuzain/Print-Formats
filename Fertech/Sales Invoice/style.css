@@ -1,0 +1,18 @@
+table, th, td {
+    border: 1px solid black !important;
+    border-collapse: collapse !important;
+  }
+  .solid {
+      border-style: solid !important;
+  }
+  table ,tr.nospace > td{
+      padding: 2!important; border-spacing: 0!important;  margin:0!important;
+  }
+  
+  .print-format {
+      margin-left:1mm;
+      margin-right:1mm;
+  }
+  tr.nospace > td{
+      padding: 2!important; border-spacing: 1!important;  margin:1!important;
+          }
